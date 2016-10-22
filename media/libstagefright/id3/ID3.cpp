@@ -836,10 +836,10 @@ void ID3::Iterator::findFrame() {
     }
 }
 
-static size_t StringSize(const uint8_t *start, uint8_t encoding) {
+static size_t StringSize(const uint8_t *start, size_t size_limit, uint8_t encoding) {
     if (encoding == 0x00 || encoding == 0x03) {
         // ISO 8859-1 or UTF-8
-        return strlen((const char *)start) + 1;
+        return strnlen((const char *)start, size_limit) + 1;
     }
 
     // UCS-2
@@ -871,7 +871,7 @@ ID3::getAlbumArt(size_t *length, String8 *mime) const {
         if (mVersion == ID3_V2_3 || mVersion == ID3_V2_4) {
             uint8_t encoding = data[0];
             mime->setTo((const char *)&data[1]);
-            size_t mimeLen = strlen((const char *)&data[1]) + 1;
+            size_t mimeLen = strnlen((const char *)&data[1], size - 1) + 1;
 
 #if 0
             uint8_t picType = data[1 + mimeLen];
@@ -882,7 +882,7 @@ ID3::getAlbumArt(size_t *length, String8 *mime) const {
             }
 #endif
 
-            size_t descLen = StringSize(&data[2 + mimeLen], encoding);
+            size_t descLen = StringSize(&data[2 + mimeLen], size - (2 + mimeLen), encoding);
 
             if (size < 2 ||
                     size - 2 < mimeLen ||
@@ -915,7 +915,7 @@ ID3::getAlbumArt(size_t *length, String8 *mime) const {
             }
 #endif
 
-            size_t descLen = StringSize(&data[5], encoding);
+            size_t descLen = StringSize(&data[5], size - 5, encoding);
 
             *length = size - 5 - descLen;
 
